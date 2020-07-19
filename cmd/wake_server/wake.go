@@ -116,6 +116,7 @@ func wakeHander(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 		fmt.Fprintf(os.Stderr, "sent wake packet to %q\n", mac)
+		fmt.Fprintf(w, "👋 %s\n", mac)
 	}
 }
 
