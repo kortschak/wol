@@ -108,6 +108,7 @@ func wakeHander(w http.ResponseWriter, req *http.Request) {
 		mac, err := net.ParseMAC(m)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not parse %q as a valid MAC address: %v\n", m, err)
+			continue
 		}
 		err = wol.Wake(mac, pw, laddr, raddr)
 		if err != nil {
