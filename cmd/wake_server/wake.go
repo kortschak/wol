@@ -113,7 +113,9 @@ func wakeHander(w http.ResponseWriter, req *http.Request) {
 		err = wol.Wake(mac, pw, laddr, raddr)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error attempting to wake %q: %v\n", mac, err)
+			continue
 		}
+		fmt.Fprintf(os.Stderr, "sent wake packet to %q\n", mac)
 	}
 }
 
