@@ -7,12 +7,13 @@
 // e.g. http://localhost:8080/<comma separated mac address list>?params
 //
 // Where valid params are:
-//  via: specify the local address to send on
+//  via: specify the local address or device to send on
 //  remote: specify the remote address to send to (default: 255.255.255.255:9)
 //  pass: specify the wake password for all targets - 12 digit hex number
 package main
 
 import (
+	"bytes"
 	"encoding/hex"
 	"flag"
 	"fmt"
@@ -21,6 +22,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/kortschak/wol"
@@ -57,7 +59,12 @@ func wakeHander(w http.ResponseWriter, req *http.Request) {
 	}
 
 	values := u.Query()
-	local, err := parameter(values["via"])
+	via, err := parameter(values["via"])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "invalid parameter: %v\n", err)
+		return
+	}
+	local, err := route(via)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "invalid parameter: %v\n", err)
 		return
@@ -128,4 +135,40 @@ func parameter(s []string) (string, error) {
 		return "", fmt.Errorf("too many parameters: %v", s)
 	}
 	return s[0], nil
+}
+
+func route(dev string) (string, error) {
+	host := dev
+	var (
+		port string
+		err  error
+	)
+	if strings.Contains(host, ":") {
+		host, port, err = net.SplitHostPort(host)
+		if err != nil {
+			return dev, err
+		}
+	}
+	cmd := exec.Command("ip", "route", "show", "proto", "kernel", "dev", host)
+	var buf bytes.Buffer
+	cmd.Stdout = &buf
+	err = cmd.Run()
+	if err != nil {
+		if bytes.HasPrefix(buf.Bytes(), []byte("Cannot find device")) {
+			err = nil
+		}
+		return dev, fmt.Errorf("ip: %v", err)
+	}
+
+	host = buf.String()
+	const srcSel = " src "
+	idx := strings.Index(host, srcSel)
+	if idx < 0 {
+		return "", fmt.Errorf("no src selector: %q", host)
+	}
+	host = strings.SplitN(host[idx+len(srcSel):], " ", 2)[0]
+	if port == "" {
+		port = "0"
+	}
+	return host + ":" + port, nil
 }
