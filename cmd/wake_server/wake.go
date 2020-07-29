@@ -10,6 +10,20 @@
 //  via: specify the local address or device to send on
 //  remote: specify the remote address to send to (default: 255.255.255.255:9)
 //  pass: specify the wake password for all targets - 12 digit hex number
+//
+// The wake server is intended to be run as a service. To do this place the
+// following at /lib/systemd/system/wake-server.service
+//  [Unit]
+//  Description=WOL server service
+//
+//  [Service]
+//  Type=simple
+//  ExecStart=/usr/local/bin/wake_server
+//
+//  [Install]
+//  WantedBy=multi-user.target
+// and install the binary at /usr/local/bin/wake_server. Then the usual
+// systemd controls can be used, for example, systemctl start wake-server.
 package main
 
 import (
