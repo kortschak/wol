@@ -155,9 +155,9 @@ func route(dev string) (string, error) {
 	err = cmd.Run()
 	if err != nil {
 		if bytes.HasPrefix(buf.Bytes(), []byte("Cannot find device")) {
-			err = nil
+			return dev, nil
 		}
-		return dev, fmt.Errorf("ip: %v", err)
+		return "", fmt.Errorf("ip: %v", err)
 	}
 
 	host = buf.String()
